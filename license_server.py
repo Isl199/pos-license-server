@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 #  إعدادات السيرفر
 # ═══════════════════════════════════════════════
 PORT        = int(os.environ.get("PORT", 7070))
-DB_PATH     = Path("licenses.db")   # قاعدة بيانات مستقلة على السيرفر
+DB_PATH     = Path(os.environ.get("DB_PATH", "licenses.db"))  # على Render: /data/licenses.db
 API_SECRET  = os.environ.get("API_SECRET", "POS-SERVER-SECRET-2026")
 # ↑ غيّر هذا أو اضبطه عبر متغير بيئة: export API_SECRET=xxxxx
 
@@ -263,8 +263,15 @@ class Handler(BaseHTTPRequestHandler):
 
         path = self.path.split("?")[0]
 
+        # ── حالة قاعدة البيانات ──
+        if path == "/api/status":
+            self.send_json({
+                "found": DB_PATH.exists(),
+                "path":  str(DB_PATH.absolute())
+            })
+
         # ── واجهة الإدارة ──
-        if path == "/api/login":
+        elif path == "/api/login":
             pwd = data.get("password", "")
             self.send_json({"ok": True} if verify_admin(pwd)
                            else {"error": "كلمة المرور غير صحيحة"})
